@@ -1,5 +1,5 @@
 # terraform_aws_elb
-aws elastic load balancer
+aws elastic load balancer,
 the main.tf covers the following topics:
   1. load balancer ( alb or nlb in according the variable)
   2. load balancer listener
