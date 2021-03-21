@@ -1,5 +1,5 @@
 provider "aws" {
-  region =  "ca-central-1"
+  region = "ca-central-1"
 }
 
 ###########################################################################
@@ -9,18 +9,18 @@ provider "aws" {
 ###########################################################################
 
 resource "aws_lb" "lb" {
-  name        = "terraform-lb-${var.load_balancer_type}"
+  name               = "terraform-lb-alb"
   internal           = false
-  load_balancer_type = var.load_balancer_type == "alb" ? "application" : "network"
+  load_balancer_type = "application"
 
   # Only valid for Load Balancers of type application
-  security_groups    = var.load_balancer_type == "alb" ? data.aws_security_groups.default_sg.ids : []
-  
-  subnets            = data.aws_subnet_ids.default_subnets.ids
+  security_groups = data.aws_security_groups.default_sg.ids
+
+  subnets = data.aws_subnet_ids.default_subnets.ids
 
   enable_deletion_protection = false
 
-/*
+  /*
   access_logs {
     bucket  = aws_s3_bucket.lb_logs.bucket
     prefix  = "test-lb"
@@ -29,7 +29,7 @@ resource "aws_lb" "lb" {
 */
 
   tags = {
-    Type = var.load_balancer_type
+    Type = "alb"
   }
 }
 
@@ -59,10 +59,10 @@ resource "aws_lb_listener" "lb_listener" {
 # Static forward
 resource "aws_lb_listener_rule" "lbr_static" {
   listener_arn = aws_lb_listener.lb_listener.arn
-  
+
   # Leaving it unset will automatically set the rule with next available priority after currently existing highest rule. 
   # A listener can't have multiple rules with the same priority.
-  priority     = 20
+  priority = 20
 
   action {
     type             = "forward"
@@ -145,8 +145,8 @@ resource "aws_lb_listener_rule" "redirect_http_to_https" {
       port        = "443"
       protocol    = "HTTPS"
       status_code = "HTTP_301"
-      host = "www.google.ca"
-      path = "/"
+      host        = "www.google.ca"
+      path        = "/"
     }
   }
 
@@ -228,32 +228,32 @@ resource "aws_launch_configuration" "lc" {
   }
 
   associate_public_ip_address = true
-  security_groups = data.aws_security_groups.default_sg.ids
-  key_name = "key-hr123000" #key paire name exists in my aws.You should use your owned key nam
+  security_groups             = data.aws_security_groups.default_sg.ids
+  key_name                    = "key-hr123000" #key paire name exists in my aws.You should use your owned key nam
 
 }
 
 resource "aws_autoscaling_group" "asg" {
-  count = length(var.tg_name)
+  count                = length(var.tg_name)
   name                 = "terraform-asg-${var.tg_name[count.index]}"
   launch_configuration = aws_launch_configuration.lc[count.index].name
   min_size             = 1
   max_size             = 2
 
   health_check_grace_period = 300
-  availability_zones = data.aws_availability_zones.available_zones.names
+  availability_zones        = data.aws_availability_zones.available_zones.names
 
   instance_refresh {
     strategy = "Rolling"
     preferences {
       min_healthy_percentage = 50
-      instance_warmup = 30
+      instance_warmup        = 30
     }
   }
 
   tag {
-    key                 = "asg"
-    value               = var.tg_name[count.index]
+    key   = "asg"
+    value = var.tg_name[count.index]
     # when propagate is true, this tag will be attached to instances.
     propagate_at_launch = true
   }
@@ -270,7 +270,7 @@ resource "aws_autoscaling_group" "asg" {
 ###########################################################################
 
 resource "aws_autoscaling_attachment" "asg_attachment" {
-  count = length(var.tg_name)
+  count                  = length(var.tg_name)
   autoscaling_group_name = aws_autoscaling_group.asg[count.index].id
   alb_target_group_arn   = aws_lb_target_group.lb_tg[count.index].arn
 }

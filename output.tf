@@ -1,3 +1,3 @@
-output "lb_name" {
-  value = aws_lb.lb.dns_name
+output "nlb_name" {
+  value = aws_lb.nlb[0].dns_name
 }
